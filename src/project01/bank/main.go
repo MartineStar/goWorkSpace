@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 )
+
+
 //账户结构体
 type account struct {
 	user string
@@ -35,6 +37,7 @@ func (accountdemo account) Deposit(user string,pwd string,money float64) {
 	}	
 }
 func main(){
+
 	account1 := account{
 		user : "biob",
 		password : "666666",
