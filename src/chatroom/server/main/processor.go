@@ -19,16 +19,24 @@ type Processor struct {
 //此处形参为什么mes传递的是指针？？
 func (this *Processor) serverProcessMes(mes *message.Message) (err error) {
 	switch mes.Type {
-	case message.LoginMesType:
-		//处理登陆逻辑
-		userProcess := &process.UserProcess{
-			Conn : this.Conn,
-		}
-		err = userProcess.ServerProcessLogin(mes)
-	case message.RegisterMesType:
-		//处理注册逻辑
-	default:
-		fmt.Println("消息类型不存在，无法处理")
+		case message.LoginMesType:
+			//处理登陆逻辑
+			userProcess := &process.UserProcess{
+				Conn : this.Conn,
+			}
+
+			err = userProcess.ServerProcessLogin(mes)
+
+		case message.RegisterMesType:
+			//处理注册逻辑
+			userProcess := &process.UserProcess{
+				Conn : this.Conn,
+			}
+
+			err = userProcess.ServerProcessRegister(mes)
+			
+		default:
+			fmt.Println("消息类型不存在，无法处理")
 	}
 	return
 }

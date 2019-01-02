@@ -2,7 +2,8 @@ package main
 import (
 	"fmt"
 	"net"
-
+	"time"
+	"chatroom/server/model"
 )
 
 // func writePkg(conn net.Conn,data []byte) (err error) {
@@ -146,7 +147,24 @@ func processHandler(conn net.Conn) {
 
 }
 
+
+
+//编写一个函数，完成对userDao的初始化任务
+func initUserDao(){
+	//这里的pool 本身就是main包下的全局变量
+	//注意初始化顺序问题：initPool()  -->initUserDao
+	model.MyUserDao = model.NewUserDao(pool)
+}
+
+func init(){
+	//程序启动时，开始连接池初始化
+	initPool("localhost:6379",16,0,300 * time.Second)
+	//初始化userDao
+	initUserDao()
+}
+
 func main(){
+
 	//提示信息
 	fmt.Println("服务器在8889端口监听....")
 	listen,err := net.Listen("tcp","0.0.0.0:8889")
