@@ -182,7 +182,29 @@ func (this *UserProcess) Login(userId int,userPwd string) (err error){
 		return
 	}
 	if loginResMes.Code == 200 {
+		//初始化CurUser
+		CurUser.Conn = conn
+		CurUser.UserId = userId
+		CurUser.UserStatus = message.UserOnline
+
 		// fmt.Println("登陆成功了")
+
+		//显示当前在线用户列表
+		for _,v := range loginResMes.UsersId{
+			//如果用户id为当前用户id,则忽略
+			if v == userId{
+				continue
+			}
+			fmt.Println("用户id\t",v)
+			
+			//完成客户端onlineUsers 的初始化
+			user := &message.User{
+				UserId:v,
+				UserStatus:message.UserOnline,
+			}
+			onlineUsers[v] = user
+			outputOnlineUser()
+		}
 		//开启一个协程保持与客户端的链接
 		go serverProcessMes(conn)
 		//1.循环显示登陆成功后的二级菜单

@@ -53,14 +53,18 @@ func (this *UserDao) Register(user *message.User) (err error) {
 	conn := this.pool.Get()
 	defer conn.Close()
 	_,err = this.getUserById(conn,user.UserId)
-	if err != nil {
+	if err == nil {
+		fmt.Println("userid exist already")
+		err = ERROR_USER_EXIST
 		return 
 	}
 
 	//此时，说明id在redis不存在
 	data ,err := json.Marshal(user)
 	if err != nil {
+		fmt.Println("json Marshal error=",err)
 		return
+		
 	}
 
 	//入库 ,此处的"users"最好不要写死了，写成一个全局的常量最好

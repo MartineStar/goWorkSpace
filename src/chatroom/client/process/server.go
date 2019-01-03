@@ -5,6 +5,8 @@ import (
 	"os"
 	"net"
 	"chatroom/client/utils"
+	"chatroom/common/message"
+	"encoding/json"
 )
 
 //显示登陆成功后的界面..
@@ -16,12 +18,19 @@ func ShowMenu(){
 	fmt.Println("--------4. 退出系统       ------------")
 	fmt.Printf("请选择(1-4):\t")
 	var key int
+	var content string
+	smsProcess := SmsProcess{} 
 	fmt.Scanf("%d\n",&key)
 	switch key{
 		case 1:
-			fmt.Println("显示在线用户列表")
+			outputOnlineUser()
 		case 2:
-			fmt.Println("发送消息")
+			// fmt.Println("发送消息")
+			fmt.Println("您发送群消息： ")
+			fmt.Scanf("%s\n",&content)
+			//调用smsProcess的发送群聊的方法
+			smsProcess.SendGroupMes(content)
+
 		case 3:
 			fmt.Println("信息列表")
 		case 4:
@@ -52,6 +61,19 @@ func serverProcessMes(Conn net.Conn) {
 			return
 		}
 		//如果读取到消息，进行下一步处理
-		fmt.Printf("mes=%v\n",mes)
+		switch mes.Type {
+			case message.NotifyUserStatusMesType://系统推送有人上线信息
+				//1.取出NotifyUserStatusMes
+				var notifyUserStatusMes message.NotifyUserStatusMes
+				json.Unmarshal([]byte(mes.Data),&notifyUserStatusMes)
+				//2.把这个用户的信息，状态保存到客户map[int]User中
+				updateUserStatus(&notifyUserStatusMes)
+				//3.处理
+			case message.SmsMesType://有人群发消息
+				outputGroupMes(&mes)
+			default:
+				fmt.Println("服务器端返回了未知的消息类型")
+			
+		}
 	}
 }

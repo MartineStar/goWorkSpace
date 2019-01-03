@@ -11,6 +11,58 @@ import (
 
 type UserProcess struct {
 	Conn net.Conn
+	//增加一个字段，表示该Conn是哪一个用户
+	UserId int
+}
+
+//编写通知所在线的用户的方法
+func (this *UserProcess) NotifyOthersOnlineUser(userId int) {
+	//遍历onlineUsers,然后每一个发送NotifyUserStatusMes
+	for id,userProcess := range userMgr.onlineUsers{
+		//过滤自己
+		if id == userId{
+			continue
+		}
+		//开始通知每一个人我的在线信息，单独写成一个方法
+		userProcess.NotifyMeOnline(userId)
+	}
+
+}
+
+func (this *UserProcess) NotifyMeOnline(userId int) {
+	//组装NotifyUserStatusMes
+	var mes message.Message
+	mes.Type = message.NotifyUserStatusMesType
+	
+	var notifyUserStatusMes message.NotifyUserStatusMes
+	notifyUserStatusMes.UserId = userId
+	notifyUserStatusMes.Status = message.UserOnline
+
+	//将notifyUserStatusMes序列化
+	data,err := json.Marshal(notifyUserStatusMes)
+	if err != nil {
+		fmt.Println("json.Marshal notifyUserStatusMes failed,error=",err)
+		return
+	}
+	//将序列化后的notifyUserStatusMes赋值给mes.Data
+	mes.Data = string(data)
+
+	//对mes再次序列化，准备发送
+	data,err = json.Marshal(mes)
+	if err != nil {
+		fmt.Println("json.Marshal mes failed,error=",err)
+		return
+	}
+
+	//8.发送到客户端
+	tf := &utils.Transfer{
+		Conn:this.Conn,
+	}
+	err = tf.WritePkg(data)
+	if err != nil {
+		fmt.Println("notifyUserStatusMes推送消息失败,error=",err)
+	}
+	return
 }
 
 //编写也该serverProcessLogin函数，专门处理注册请求
@@ -69,6 +121,9 @@ func (this *UserProcess) ServerProcessRegister(mes *message.Message) (err error)
 		Conn:this.Conn,
 	}
 	err = tf.WritePkg(data)
+	if err != nil {
+		fmt.Println("返回注册结果给客户端失败,error=",err)
+	}
 	return
 }
 
@@ -106,6 +161,19 @@ func (this *UserProcess) ServerProcessLogin(mes *message.Message) (err error) {
 		}
 	}else {
 		loginResMes.Code = 200
+		//这里，因为用户登陆成功，我们就把登陆成功的用户放入userMgr中
+		//将登陆成功的用户的userId赋给this
+		this.UserId = loginMes.UserId
+		userMgr.AddOnlineUser(this)
+		// fmt.Println("在线用户：",userMgr.GetAllOnlineUser())
+
+		//通知其他用户,本账号上线
+		this.NotifyOthersOnlineUser(loginMes.UserId)
+
+		//将当前在线用户的id放入loginResMes.UsersId
+		for id,_ := range userMgr.onlineUsers {
+			loginResMes.UsersId = append(loginResMes.UsersId,id)
+		}
 		fmt.Println(user,"登陆成功")
 	}
 

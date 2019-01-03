@@ -18,6 +18,7 @@ type Processor struct {
 //功能：根据客户端发送消息种类不同，决定调用哪个函数来处理
 //此处形参为什么mes传递的是指针？？
 func (this *Processor) serverProcessMes(mes *message.Message) (err error) {
+	fmt.Println("received mes=",mes)
 	switch mes.Type {
 		case message.LoginMesType:
 			//处理登陆逻辑
@@ -26,7 +27,7 @@ func (this *Processor) serverProcessMes(mes *message.Message) (err error) {
 			}
 
 			err = userProcess.ServerProcessLogin(mes)
-
+		
 		case message.RegisterMesType:
 			//处理注册逻辑
 			userProcess := &process.UserProcess{
@@ -34,7 +35,13 @@ func (this *Processor) serverProcessMes(mes *message.Message) (err error) {
 			}
 
 			err = userProcess.ServerProcessRegister(mes)
-			
+		
+		case message.SmsMesType:
+			//创建SmsProcess实例，完成转发消息，
+			//因为每个人转发消息都不同，所以每次过来一个就创建一个实例
+			smsProcess := &process.SmsProcess{}
+			smsProcess.SendGroupMes(mes)
+
 		default:
 			fmt.Println("消息类型不存在，无法处理")
 	}
